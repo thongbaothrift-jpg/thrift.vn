@@ -1,0 +1,508 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-red: #b61819;
+  --color-brand-bg: #f9f9f9;
+  --spacing-container-max: 1440px;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-bg text-black antialiased;
+  }
+}
+
+@layer components {
+  .font-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.1em];
+  }
+
+  .btn-primary {
+    @apply bg-black text-white px-10 py-4 font-semibold uppercase tracking-widest text-[11px] hover:bg-brand-red transition-all duration-300 cursor-pointer;
+  }
+
+  .btn-outline {
+    @apply border border-white text-white px-10 py-4 font-semibold uppercase tracking-widest text-[11px] hover:bg-white hover:text-black transition-all duration-300 cursor-pointer;
+  }
+
+  .btn-secondary {
+    @apply bg-brand-red text-white px-8 py-3 font-semibold uppercase tracking-widest text-[11px] hover:bg-black transition-all duration-300 cursor-pointer;
+  }
+
+  .btn-ghost {
+    @apply border border-black text-black px-6 py-3 font-semibold uppercase tracking-widest text-[11px] hover:bg-black hover:text-white transition-all duration-300 cursor-pointer;
+  }
+
+  .input-field {
+    @apply w-full border border-zinc-300 px-4 py-3 text-sm focus:border-black focus:outline-none transition-colors bg-white;
+  }
+
+  .input-field:disabled {
+    @apply bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed select-none;
+  }
+
+  .card-container {
+    @apply bg-white border border-zinc-200 p-6;
+  }
+
+  .badge-new {
+    @apply bg-brand-red text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest;
+  }
+
+  .badge-hot {
+    @apply bg-black text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest;
+  }
+
+  .badge-discount {
+    @apply bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 uppercase tracking-widest;
+  }
+
+  .badge-info {
+    @apply bg-white/90 backdrop-blur-sm text-zinc-800 text-[9px] font-semibold px-1.5 py-0.5 tracking-wider;
+  }
+
+  .badge-info-dark {
+    @apply bg-zinc-900/90 backdrop-blur-sm text-white text-[9px] font-semibold px-1.5 py-0.5 tracking-wider;
+  }
+}
+
+::selection {
+  background-color: #b61819;
+  color: white;
+}
+
+/* ============================================
+   PROSE — Blog / Rich-text content styling
+   Replaces @tailwindcss/typography
+   ============================================ */
+.prose {
+  color: #18181b;
+  line-height: 1.8;
+  font-size: 1.125rem;
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+/* Headings */
+.prose h1 { font-size: 2.25em; font-weight: 800; line-height: 1.15; margin-top: 0; margin-bottom: 0.85em; letter-spacing: -0.02em; }
+.prose h2 { font-size: 1.5em; font-weight: 700; line-height: 1.3; margin-top: 2em; margin-bottom: 0.8em; padding-bottom: 0.3em; border-bottom: 1px solid #e4e4e7; }
+.prose h3 { font-size: 1.25em; font-weight: 600; line-height: 1.4; margin-top: 1.6em; margin-bottom: 0.6em; }
+.prose h4 { font-size: 1.1em; font-weight: 600; line-height: 1.5; margin-top: 1.4em; margin-bottom: 0.5em; }
+
+/* Paragraphs */
+.prose p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+
+/* Lists — gạch đầu dòng & số thứ tự */
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.625em;
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.625em;
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+
+.prose li {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.prose ul ul { list-style-type: circle; }
+.prose ul ul ul { list-style-type: square; }
+
+/* Blockquote */
+.prose blockquote {
+  border-left: 4px solid #b61819;
+  padding-left: 1.25em;
+  color: #52525b;
+  font-style: italic;
+  margin-top: 1.6em;
+  margin-bottom: 1.6em;
+}
+
+.prose blockquote p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Links */
+.prose a {
+  color: #b61819;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.prose a:hover {
+  color: #991b1b;
+}
+
+/* Images */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-top: 2em;
+  margin-bottom: 2em;
+}
+
+/* Code — inline */
+.prose code {
+  background: #f4f4f5;
+  color: #b61819;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* Code — block */
+.prose pre {
+  background: #18181b;
+  color: #fafafa;
+  padding: 1.25em 1.5em;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-top: 1.75em;
+  margin-bottom: 1.75em;
+  font-size: 0.875em;
+  line-height: 1.7;
+}
+
+.prose pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+/* Tables */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  font-size: 0.9em;
+}
+
+.prose thead th {
+  background: #f4f4f5;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75em 1em;
+  border-bottom: 2px solid #e4e4e7;
+}
+
+.prose tbody td {
+  padding: 0.75em 1em;
+  border-bottom: 1px solid #e4e4e7;
+}
+
+.prose tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Horizontal rule */
+.prose hr {
+  border: none;
+  border-top: 1px solid #e4e4e7;
+  margin-top: 3em;
+  margin-bottom: 3em;
+}
+
+/* Strong & Emphasis */
+.prose strong { font-weight: 700; color: #09090b; }
+.prose em { font-style: italic; }
+
+/* Larger prose variant */
+.prose-lg { font-size: 1.125rem; }
+
+/* Scroll reveal animations - Softer & more premium */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  filter: blur(10px);
+  transition: 
+    opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1), 
+    transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Slide-over panel animation */
+.slide-over-enter {
+  transform: translateX(100%);
+}
+
+.slide-over-enter-active {
+  transform: translateX(0);
+  transition: transform 300ms ease-out;
+}
+
+.slide-over-exit {
+  transform: translateX(0);
+}
+
+.slide-over-exit-active {
+  transform: translateX(100%);
+  transition: transform 300ms ease-in;
+}
+
+/* Overlay animation */
+.overlay-enter {
+  opacity: 0;
+}
+
+.overlay-enter-active {
+  opacity: 1;
+  transition: opacity 300ms ease-out;
+}
+
+.overlay-exit {
+  opacity: 1;
+}
+
+.overlay-exit-active {
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+}
+
+/* Page Transitions - Smooth fade & slide */
+.page-transition-content {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-enter {
+  animation: pageEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Navigation Link Animations */
+.nav-link {
+  position: relative;
+  display: inline-block;
+  transition: color 0.25s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background-color: currentColor;
+  transition: width 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Button Hover Effects */
+.btn-smooth {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.btn-smooth::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-smooth:hover::before {
+  left: 100%;
+}
+
+/* Link Hover - Scale & Color */
+.link-smooth {
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.link-smooth:hover {
+  transform: translateY(-1px);
+}
+
+/* Card Hover - Lift & Shadow */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+}
+
+/* Image Zoom on Hover */
+.img-zoom {
+  overflow: hidden;
+}
+
+.img-zoom img {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.img-zoom:hover img {
+  transform: scale(1.08);
+}
+
+/* Shimmer Effect for Skeletons */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #f3f4f6;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Stagger Animation Delays */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 160ms; }
+.stagger-4 { animation-delay: 240ms; }
+.stagger-5 { animation-delay: 320ms; }
+
+/* Mobile Menu Animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cart Panel Slide-in Animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.cart-panel {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Overlay fade animation uses fadeIn from animations.css */
+
+/* Slide-in-right animation for user detail panel */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Stagger Animation for list items - Faster & More responsive */
+.stagger-item {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: staggerIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 0.05s);
+}
+
+@keyframes staggerIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Grid-level stagger — single animation, zero JS overhead */
+.product-card-animated {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: staggerFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes staggerFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

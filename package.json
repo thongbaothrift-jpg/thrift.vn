@@ -1,0 +1,33 @@
+{
+  "name": "shop-renew-dream",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+  "dev": "next dev",
+  "build": "next build && node copy-static.js",
+  "start": "node .next/standalone/server.js",
+  "lint": "eslint"
+},
+  "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "@react-oauth/google": "^0.13.5",
+    "hugerte": "^1.0.10",
+    "lucide-react": "^1.14.0",
+    "next": "16.2.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "critters": "^0.0.23",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
