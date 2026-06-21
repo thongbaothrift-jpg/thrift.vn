@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart-context";
 import { convertDriveLink } from "@/lib/utils";
@@ -9,11 +9,14 @@ import Image from "next/image";
 import { formatPrice, checkProductsStock, type StockCheckResult } from "@/lib/api";
 
 export function CartSlideOver() {
-  const { items, totalItems, totalPrice, isOpen, closeCart, removeItem, updateQuantity } = useCart();
+  const { items, totalItems, totalPrice, appliedCoupon, setAppliedCoupon, isOpen, closeCart, removeItem, updateQuantity } = useCart();
   const [isAnimating, setIsAnimating] = useState(false);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
   const [isCheckingStock, setIsCheckingStock] = useState(false);
   const [stockError, setStockError] = useState<StockCheckResult[] | null>(null);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +29,51 @@ export function CartSlideOver() {
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (appliedCoupon && appliedCoupon.minOrderValue && totalPrice < appliedCoupon.minOrderValue) {
+      setAppliedCoupon(null);
+      setCouponError("Mã giảm giá đã bị gỡ do chưa đủ điều kiện đơn hàng tối thiểu.");
+    }
+  }, [totalPrice, appliedCoupon, setAppliedCoupon]);
+
+  const calculateDiscount = () => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.discountPercent) {
+      return (totalPrice * appliedCoupon.discountPercent) / 100;
+    }
+    return appliedCoupon.discountAmount || 0;
+  };
+
+  const discount = calculateDiscount();
+  const finalTotal = Math.max(0, totalPrice - discount);
+
+  const handleApplyCoupon = async (e?: FormEvent) => {
+    e?.preventDefault();
+    const code = couponCode.trim();
+    if (!code) return;
+
+    setIsApplyingCoupon(true);
+    setCouponError("");
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/coupons/validate?code=${encodeURIComponent(code)}&amount=${totalPrice}`,
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error || "Mã không hợp lệ");
+        setAppliedCoupon(null);
+        return;
+      }
+
+      setAppliedCoupon(data);
+      setCouponCode("");
+    } catch {
+      setCouponError("Lỗi kết nối máy chủ");
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
 
   const handleCheckout = async () => {
     setIsCheckingStock(true);
@@ -188,12 +236,62 @@ export function CartSlideOver() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-zinc-200 px-8 py-6 space-y-4 bg-white">
+          <div className="border-t border-zinc-200 px-5 sm:px-6 py-4 space-y-3 bg-white">
             <div className="flex justify-between items-center">
               <span className="font-label text-zinc-500">Tạm tính</span>
               <span className="text-lg font-bold text-zinc-900">{formatPrice(totalPrice)}</span>
             </div>
-            <p className="text-xs text-zinc-400">Giao hàng và thuế được tính khi thanh toán</p>
+            <div className="space-y-1.5 border-t border-zinc-100 pt-3">
+              <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Mã giảm giá</p>
+              <form onSubmit={handleApplyCoupon} className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value.toUpperCase());
+                    setCouponError("");
+                  }}
+                  placeholder="NHẬP MÃ"
+                  className="min-w-0 flex-1 border border-zinc-200 px-2.5 py-1.5 text-xs font-semibold uppercase focus:outline-none focus:border-black"
+                />
+                <button
+                  type="submit"
+                  disabled={isApplyingCoupon || !couponCode.trim()}
+                  className="bg-zinc-900 text-white px-3 py-1.5 text-[9px] font-bold hover:bg-black transition-colors uppercase disabled:opacity-50"
+                >
+                  {isApplyingCoupon ? "..." : "Áp dụng"}
+                </button>
+              </form>
+              {couponError && <p className="text-[10px] text-brand-red font-medium">{couponError}</p>}
+              {appliedCoupon && (
+                <div className="flex items-center justify-between bg-green-50 border border-green-100 px-2.5 py-1.5">
+                  <span className="text-[10px] font-bold text-green-700">ĐÃ ÁP DỤNG: {appliedCoupon.code}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAppliedCoupon(null);
+                      setCouponError("");
+                    }}
+                    className="text-[10px] text-zinc-400 hover:text-black font-bold"
+                  >
+                    Gỡ bỏ
+                  </button>
+                </div>
+              )}
+            </div>
+            {appliedCoupon && (
+              <>
+                <div className="flex justify-between items-center">
+                  <span className="font-label text-zinc-500">Giảm giá ({appliedCoupon.code})</span>
+                  <span className="font-bold text-brand-red">-{formatPrice(discount)}</span>
+                </div>
+                <div className="flex justify-between items-center border-t border-zinc-100 pt-3">
+                  <span className="font-label text-zinc-900">Tổng sau giảm</span>
+                  <span className="text-lg font-bold text-brand-red">{formatPrice(finalTotal)}</span>
+                </div>
+              </>
+            )}
+            {/* <p className="text-xs text-zinc-400">Giao hàng và thuế được tính khi thanh toán</p> */}
             <button
               onClick={handleCheckout}
               disabled={isCheckingStock}
@@ -203,7 +301,7 @@ export function CartSlideOver() {
             </button>
             <button
               onClick={closeCart}
-              className="block w-full text-center border border-zinc-300 text-zinc-600 px-6 py-3 font-label hover:border-black hover:text-black btn-transition"
+              className="block w-full text-center border border-zinc-300 text-zinc-600 px-6 py-2.5 font-label hover:border-black hover:text-black btn-transition"
             >
               Tiếp tục mua sắm
             </button>

@@ -229,10 +229,10 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-zinc-200 p-6 sm:p-8 sticky top-28">
-            <h2 className="text-lg sm:text-xl font-bold uppercase tracking-tight mb-6 sm:mb-8">Tóm tắt đơn hàng</h2>
+          <div className="bg-white border border-zinc-200 p-5 sm:p-6 sticky top-28">
+            <h2 className="text-lg sm:text-xl font-bold uppercase tracking-tight mb-5 sm:mb-6">Tóm tắt đơn hàng</h2>
             
-            <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
+            <div className="space-y-3 sm:space-y-4 mb-5 sm:mb-6">
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="text-zinc-500">Tạm tính ({totalItems} sản phẩm)</span>
                 <span className="font-bold text-zinc-900">{formatPrice(totalPrice)}</span>
@@ -244,9 +244,9 @@ export default function CartPage() {
               <p className="text-[10px] text-zinc-400 leading-relaxed">Phí vận chuyển sẽ được tính chính xác khi bạn nhập địa chỉ giao hàng ở bước thanh toán.</p>
               
               {/* Coupon Section */}
-              <div className="pt-4 border-t border-zinc-50">
-                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2">Mã giảm giá</p>
-                <div className="flex gap-2">
+              <div className="pt-3 border-t border-zinc-50">
+                <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1.5">Mã giảm giá</p>
+                <div className="flex gap-1.5">
                   <input 
                     type="text" 
                     value={couponCode}
@@ -255,19 +255,19 @@ export default function CartPage() {
                       setCouponError("");
                     }}
                     placeholder="NHẬP MÃ"
-                    className="flex-1 border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:border-black"
+                    className="min-w-0 flex-1 border border-zinc-200 px-2.5 py-1.5 text-xs focus:outline-none focus:border-black"
                   />
                   <button 
                     onClick={handleApplyCoupon}
                     disabled={isApplying || !couponCode}
-                    className="bg-zinc-900 text-white px-4 py-2 text-xs font-bold hover:bg-black transition-colors uppercase disabled:opacity-50"
+                    className="bg-zinc-900 text-white px-3 py-1.5 text-[9px] font-bold hover:bg-black transition-colors uppercase disabled:opacity-50"
                   >
                     {isApplying ? "..." : "Áp dụng"}
                   </button>
                 </div>
                 {couponError && <p className="text-[10px] text-brand-red mt-1 font-medium">{couponError}</p>}
                 {appliedCoupon && (
-                  <div className="mt-2 flex justify-between items-center bg-green-50 px-3 py-2 border border-green-100">
+                  <div className="mt-1.5 flex justify-between items-center bg-green-50 px-2.5 py-1.5 border border-green-100">
                     <span className="text-[10px] font-bold text-green-700">ĐÃ ÁP DỤNG: {appliedCoupon.code}</span>
                     <button onClick={() => setAppliedCoupon(null)} className="text-[10px] text-zinc-400 hover:text-black">Gỡ bỏ</button>
                   </div>
@@ -275,7 +275,7 @@ export default function CartPage() {
               </div>
             </div>
 
-            <div className="border-t border-zinc-100 pt-6 mb-6 sm:mb-8 space-y-3">
+            <div className="border-t border-zinc-100 pt-5 mb-5 sm:mb-6 space-y-3">
               {appliedCoupon && (
                 <div className="flex justify-between text-xs sm:text-sm">
                   <span className="text-zinc-500 font-medium italic">Giảm giá ({appliedCoupon.code})</span>

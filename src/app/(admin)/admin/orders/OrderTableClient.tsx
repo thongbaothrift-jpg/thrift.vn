@@ -44,6 +44,14 @@ function formatCurrency(v: number) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(v);
 }
 
+function getOrderProductSummary(order: AdminOrder) {
+  const firstItem = order.items[0];
+  const productName = firstItem?.product?.name ?? 'Chưa có sản phẩm';
+  const extraCount = Math.max(order.items.length - 1, 0);
+
+  return { productName, extraCount };
+}
+
 interface OrderTableClientProps {
   initialOrders: AdminOrder[];
   initialTotal: number;
@@ -244,15 +252,16 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
       {/* Table — compact card layout, no horizontal scroll */}
       <div className="bg-transparent md:bg-white md:rounded-2xl md:border md:border-zinc-100 md:shadow-sm md:overflow-hidden flex flex-col gap-3 md:gap-0 md:block md:divide-y md:divide-zinc-100">
         {/* Header */}
-        <div className="hidden md:grid md:grid-cols-12 gap-0 bg-zinc-50/50 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-100">
-          <div className="col-span-1 flex items-center">
+        <div className="hidden md:grid md:grid-cols-[40px_minmax(180px,1.35fr)_minmax(100px,0.8fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_minmax(130px,0.9fr)_minmax(100px,0.7fr)] gap-0 bg-zinc-50/50 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-400 border-b border-zinc-100">
+          <div className="flex items-center">
             <input type="checkbox" checked={false} readOnly className="w-4 h-4 accent-black" />
           </div>
-          <div className="col-span-2">Mã đơn</div>
-          <div className="col-span-3">Khách hàng</div>
-          <div className="col-span-2">Thanh toán</div>
-          <div className="col-span-2">Trạng thái</div>
-          <div className="col-span-2 text-right">Thao tác</div>
+          <div>Sản phẩm</div>
+          <div>Mã đơn</div>
+          <div>Khách hàng</div>
+          <div>Thanh toán</div>
+          <div>Trạng thái</div>
+          <div className="text-right">Thao tác</div>
         </div>
 
         {/* Rows */}
@@ -262,10 +271,10 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
           orders.map((order) => (
             <div
               key={order.id}
-              className={`px-4 py-4 md:py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm md:shadow-none md:border-none md:rounded-none md:grid md:grid-cols-12 md:gap-0 md:items-center hover:bg-zinc-50/50 transition-colors ${order.trackingCode && selectedIds.has(order.id) ? 'bg-blue-50/30' : ''}`}
+              className={`px-4 py-4 md:py-3 bg-white rounded-2xl border border-zinc-100 shadow-sm md:shadow-none md:border-none md:rounded-none md:grid md:grid-cols-[40px_minmax(180px,1.35fr)_minmax(100px,0.8fr)_minmax(150px,1fr)_minmax(120px,0.8fr)_minmax(130px,0.9fr)_minmax(100px,0.7fr)] md:gap-0 md:items-center hover:bg-zinc-50/50 transition-colors ${order.trackingCode && selectedIds.has(order.id) ? 'bg-blue-50/30' : ''}`}
             >
               {/* Checkbox */}
-              <div className="hidden md:flex col-span-1 items-center">
+              <div className="hidden md:flex items-center">
                 {order.trackingCode && order.status !== 'CANCELLED' ? (
                   <input type="checkbox" checked={selectedIds.has(order.id)} onChange={() => toggleSelect(order.id)} className="w-4 h-4 accent-black cursor-pointer" />
                 ) : (
@@ -273,8 +282,29 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
                 )}
               </div>
 
+              {/* Sản phẩm */}
+              <div className="mb-2 md:mb-0">
+                {(() => {
+                  const { productName, extraCount } = getOrderProductSummary(order);
+                  return (
+                    <Link href={`/admin/orders/${order.id}`} className="block group">
+                      <p className="text-xs font-black text-zinc-900 line-clamp-2 group-hover:text-brand-red transition-colors">
+                        {productName}
+                      </p>
+                      <p className="text-[10px] text-zinc-400 mt-0.5 font-semibold">
+                        {order.items.length === 0
+                          ? 'Không có sản phẩm'
+                          : extraCount > 0
+                          ? `+${extraCount} sản phẩm khác`
+                          : `${order.items[0]?.quantity ?? 1} sản phẩm`}
+                      </p>
+                    </Link>
+                  );
+                })()}
+              </div>
+
               {/* Mã đơn */}
-              <div className="col-span-12 md:col-span-2 mb-2 md:mb-0">
+              <div className="mb-2 md:mb-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <Link href={`/admin/orders/${order.id}`} className="font-mono text-xs text-brand-red hover:underline font-bold">
                     #{order.id.slice(0, 8)}
@@ -309,13 +339,13 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
               </div>
 
               {/* Khách hàng */}
-              <div className="col-span-12 md:col-span-3 mb-1 md:mb-0">
+              <div className="mb-1 md:mb-0">
                 <p className="text-xs font-semibold text-black">{order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Khách vãng lai'}</p>
                 <p className="text-[10px] text-zinc-400">{order.shippingPhone}</p>
               </div>
 
               {/* Thanh toán */}
-              <div className="col-span-12 md:col-span-2 mb-1 md:mb-0">
+              <div className="mb-1 md:mb-0">
                 <p className="text-xs font-bold text-black">{formatCurrency(order.total)}</p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${order.paymentStatus === 'SUCCESS' ? 'bg-green-500' : 'bg-amber-500'}`} />
@@ -333,7 +363,7 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
               </div>
 
               {/* Trạng thái */}
-              <div className="col-span-12 md:col-span-2 mb-2 md:mb-0">
+              <div className="mb-2 md:mb-0">
                 <span className={`inline-block text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full ${STATUS_COLORS[order.status] || 'bg-zinc-100 text-zinc-800'}`}>
                   {STATUS_OPTIONS.find((o) => o.value === order.status)?.label ?? order.status}
                 </span>
@@ -351,7 +381,7 @@ export function OrderTableClient({ initialOrders, initialTotal, initialFilters }
               </div>
 
               {/* Thao tác */}
-              <div className="col-span-12 md:col-span-2 flex items-center gap-2">
+              <div className="flex items-center justify-start md:justify-end gap-2">
                 {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && order.status !== 'PAYMENT_EXPIRED' && (
                   <button
                     onClick={() => setCancelModal({ orderId: order.id, orderCode: order.id.slice(0, 8) })}

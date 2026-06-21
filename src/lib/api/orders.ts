@@ -87,6 +87,23 @@ export async function checkFirstOrder(): Promise<{ isFirstOrder: boolean }> {
   return fetchOrders<{ isFirstOrder: boolean }>('/orders/check-first-order');
 }
 
+export interface LookupAddressResult {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  district: string;
+  ward: string;
+  lastOrderAt: string;
+}
+
+export async function lookupAddressByPhone(phone: string): Promise<{ address: LookupAddressResult }> {
+  return fetchOrders<{ address: LookupAddressResult }>(
+    `/orders/lookup-address?phone=${encodeURIComponent(phone)}`,
+  );
+}
+
 export interface CreateOrderRequest {
   items: { productId: string; quantity: number; price: number; size?: string }[];
   shippingName: string;

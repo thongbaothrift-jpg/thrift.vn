@@ -619,7 +619,7 @@ export function OrderDetailClient({
                         </div>
                       </div>
                       <a
-                        href={`https://mua-supership.vn/?code=${order.trackingCode}`}
+                        href={`https://tracking.supership.vn/?code=${order.trackingCode}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline font-bold flex items-center gap-1"
@@ -1125,7 +1125,7 @@ export function OrderDetailClient({
                   </div>
                 </div>
                 <a
-                  href={`https://mua-supership.vn/?code=${order.trackingCode}`}
+                  href={`https://tracking.supership.vn/?code=${order.trackingCode}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 bg-blue-50 text-blue-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center justify-center gap-2"

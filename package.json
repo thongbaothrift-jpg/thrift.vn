@@ -6,7 +6,8 @@
   "dev": "next dev",
   "build": "next build && node copy-static.js",
   "start": "node .next/standalone/server.js",
-  "lint": "eslint"
+  "lint": "eslint",
+  "typecheck": "tsc --noEmit"
 },
   "dependencies": {
     "@prisma/client": "^7.8.0",

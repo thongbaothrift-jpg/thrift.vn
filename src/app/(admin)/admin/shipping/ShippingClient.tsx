@@ -297,7 +297,7 @@ export function ShippingClient({
                 {order.trackingCode && (
                   <>
                     <a
-                      href={`https://mua-supership.vn/?code=${order.trackingCode}`}
+                      href={`https://tracking.supership.vn/?code=${order.trackingCode}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all flex items-center gap-1.5"

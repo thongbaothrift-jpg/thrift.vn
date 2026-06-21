@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,12 @@ import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
 import { convertDriveLink } from "@/lib/utils";
 import { formatPrice } from "@/lib/api";
-import { createOrder, checkFirstOrder } from "@/lib/api/orders";
+import {
+  createOrder,
+  checkFirstOrder,
+  lookupAddressByPhone,
+  type LookupAddressResult,
+} from "@/lib/api/orders";
 import { createVNPayUrl } from "@/lib/api/reviews-notifications";
 import { useSiteTexts } from "@/lib/site-texts-context";
 import { AddressSelector } from "@/components/user/checkout/AddressSelector";
@@ -41,6 +46,7 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
   const [orderDoneId, setOrderDoneId] = useState("");
+  const checkoutTopRef = useRef<HTMLDivElement | null>(null);
 
   // Free shipping: đơn từ ngưỡng trong admin HOẶC tối thiểu 2 sản phẩm
   const getShippingFee = (
@@ -91,6 +97,11 @@ export default function CheckoutPage() {
       setIsFirstOrder(true);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!checkoutTopRef.current) return;
+    checkoutTopRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step, orderDone]);
 
   // Redirect unauthenticated users away from checkout (only for COD — handled in PaymentForm)
   // This is intentionally removed: guest CAN access checkout for VNPay/Bank
@@ -189,7 +200,7 @@ export default function CheckoutPage() {
   const grandTotal = Math.max(0, totalPrice - discount + shippingFee + tax);
 
   return (
-    <div className="max-w-[1440px] mx-auto px-8 py-12">
+    <div ref={checkoutTopRef} className="max-w-[1440px] mx-auto px-8 py-12">
       <nav className="mb-8">
         <ol className="flex items-center gap-2 text-sm text-zinc-400">
           <Link
@@ -527,6 +538,13 @@ function ShippingForm({
   const [saveAddress, setSaveAddress] = useState(false);
   const [savingAddress, setSavingAddress] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [lookupPhone, setLookupPhone] = useState("");
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState("");
+  const [lookupAddress, setLookupAddress] = useState<LookupAddressResult | null>(null);
+  const [showLookupForm, setShowLookupForm] = useState(false);
+  const [usingLookupAddress, setUsingLookupAddress] = useState(false);
+  const applyingLookupAddressRef = useRef(false);
 
   // Fetch provinces on mount
   useEffect(() => {
@@ -544,6 +562,8 @@ function ShippingForm({
   // Reset form when switching to "Nhập địa chỉ khác"
   useEffect(() => {
     if (showNewAddressForm) {
+      setUsingLookupAddress(false);
+      setLookupAddress(null);
       setForm({
         fullName: "",
         email: "",
@@ -566,6 +586,8 @@ function ShippingForm({
   // Auto-fill form when a saved address is selected
   useEffect(() => {
     if (!selectedAddressId) return;
+    setUsingLookupAddress(false);
+    setLookupAddress(null);
 
     const { getAddresses, getUserProfile } = require("@/lib/api/user");
     getAddresses(token ?? "")
@@ -684,6 +706,7 @@ function ShippingForm({
 
   // Fetch districts when province changes
   useEffect(() => {
+    if (applyingLookupAddressRef.current) return;
     if (!selectedProvinceCode) {
       setDistricts([]);
       setWards([]);
@@ -722,6 +745,7 @@ function ShippingForm({
 
   // Fetch wards when district changes
   useEffect(() => {
+    if (applyingLookupAddressRef.current) return;
     if (!selectedDistrictCode) {
       setWards([]);
       setSelectedWardCode("");
@@ -764,15 +788,148 @@ function ShippingForm({
     setSelectedWardName(ward?.name || "");
   };
 
+  const normalizeAreaName = (value: string) =>
+    value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\b(thanh pho|tinh|quan|huyen|thi xa|phuong|xa|thi tran)\b/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const findAreaMatch = (items: AreaItem[], value?: string | null) => {
+    if (!value) return undefined;
+    const normalizedValue = normalizeAreaName(value);
+    return items.find(
+      (item) =>
+        item.code === value ||
+        item.name === value ||
+        normalizeAreaName(item.name) === normalizedValue,
+    );
+  };
+
+  const applyLookupAddress = async (addr: LookupAddressResult) => {
+    applyingLookupAddressRef.current = true;
+    setUsingLookupAddress(true);
+    setFormErrors({});
+    setSaveAddress(false);
+    setForm({
+      fullName: addr.fullName,
+      email: addr.email || "",
+      phone: addr.phone,
+      address: addr.address,
+      city: addr.city,
+      district: addr.district,
+      note: "",
+    });
+    setSelectedProvinceCode("");
+    setSelectedDistrictCode("");
+    setSelectedWardCode("");
+    setSelectedWardName(addr.ward || "");
+    setDistricts([]);
+    setWards([]);
+
+    let province = findAreaMatch(provinces, addr.city);
+    if (!province && addr.district) {
+      for (const candidate of provinces) {
+        try {
+          const resp = await fetch(
+            `${API}/areas/districts?province=${encodeURIComponent(candidate.code)}`,
+          );
+          const data = await resp.json();
+          if (findAreaMatch(data.results || [], addr.district)) {
+            province = candidate;
+            break;
+          }
+        } catch {
+          /* skip */
+        }
+      }
+    }
+
+    if (!province) {
+      applyingLookupAddressRef.current = false;
+      return;
+    }
+
+    setSelectedProvinceCode(province.code);
+    setForm((prev) => ({ ...prev, city: province?.name || addr.city }));
+
+    try {
+      const districtsResp = await fetch(
+        `${API}/areas/districts?province=${encodeURIComponent(province.code)}`,
+      );
+      const districtsData = await districtsResp.json();
+      const districtList = districtsData.status === "Success" ? districtsData.results || [] : [];
+      setDistricts(districtList);
+      const district = findAreaMatch(districtList, addr.district);
+
+      if (!district) {
+        setForm((prev) => ({ ...prev, district: addr.district }));
+        applyingLookupAddressRef.current = false;
+        return;
+      }
+
+      setSelectedDistrictCode(district.code);
+      setForm((prev) => ({ ...prev, district: district.name }));
+
+      if (addr.ward) {
+        const wardsResp = await fetch(
+          `${API}/areas/communes?district=${encodeURIComponent(district.code)}`,
+        );
+        const wardsData = await wardsResp.json();
+        const wardList = wardsData.status === "Success" ? wardsData.results || [] : [];
+        setWards(wardList);
+        const ward = findAreaMatch(wardList, addr.ward);
+        if (ward) {
+          setSelectedWardCode(ward.code);
+          setSelectedWardName(ward.name);
+        } else {
+          setSelectedWardName(addr.ward);
+        }
+      }
+    } catch {
+      setForm((prev) => ({
+        ...prev,
+        city: addr.city,
+        district: addr.district,
+      }));
+    } finally {
+      window.setTimeout(() => {
+        applyingLookupAddressRef.current = false;
+      }, 100);
+    }
+  };
+
+  const handleLookupAddress = async () => {
+    setLookupError("");
+    setLookupAddress(null);
+    const digits = lookupPhone.replace(/\D/g, "");
+
+    if (digits.length < 9) {
+      setLookupError("Vui lòng nhập số điện thoại hợp lệ.");
+      return;
+    }
+
+    setLookupLoading(true);
+    try {
+      const result = await lookupAddressByPhone(lookupPhone);
+      setLookupAddress(result.address);
+    } catch (err: any) {
+      setLookupError(err.message || "Không tìm thấy địa chỉ với số điện thoại này.");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate required fields for new address form
     const errors: Record<string, string> = {};
-    if (showNewAddressForm || !token) {
+    if (showNewAddressForm || usingLookupAddress || !token) {
       if (!form.fullName.trim()) errors.fullName = "Vui lòng nhập họ tên.";
       if (!form.phone.trim()) errors.phone = "Vui lòng nhập số điện thoại.";
-      if (!form.email.trim()) errors.email = "Vui lòng nhập email.";
       if (!selectedProvinceCode)
         errors.province = "Vui lòng chọn Tỉnh/Thành phố.";
       if (!selectedDistrictCode) errors.district = "Vui lòng chọn Quận/Huyện.";
@@ -783,7 +940,7 @@ function ShippingForm({
       }
     }
 
-    if (!showNewAddressForm && !selectedAddressId && !!token) {
+    if (!showNewAddressForm && !usingLookupAddress && !selectedAddressId && !!token) {
       errors.addressSelect = "Vui lòng chọn hoặc nhập địa chỉ giao hàng.";
     }
 
@@ -796,7 +953,7 @@ function ShippingForm({
     setFormErrors({});
 
     // Save new address if user checked the option
-    if (showNewAddressForm && saveAddress && token) {
+    if ((showNewAddressForm || usingLookupAddress) && saveAddress && token) {
       setSavingAddress(true);
       try {
         const prov = provinces.find(
@@ -848,7 +1005,7 @@ function ShippingForm({
   // - No address selected & no new form = show AddressSelector
   // - Address selected OR new form = show form fields
   const showFormFields =
-    showNewAddressForm || selectedAddressId !== null || !token;
+    showNewAddressForm || usingLookupAddress || selectedAddressId !== null || !token;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-10">
@@ -861,8 +1018,16 @@ function ShippingForm({
         <AddressSelector
           token={token}
           selectedAddressId={selectedAddressId}
-          onSelect={onSelectAddress}
-          onNewAddress={onToggleNewAddress}
+          onSelect={(addr) => {
+            setUsingLookupAddress(false);
+            setLookupAddress(null);
+            onSelectAddress(addr);
+          }}
+          onNewAddress={() => {
+            setUsingLookupAddress(false);
+            setLookupAddress(null);
+            onToggleNewAddress();
+          }}
           onDeleted={(deletedId) => {
             if (selectedAddressId === deletedId) {
               onAddressDeleted();
@@ -870,6 +1035,71 @@ function ShippingForm({
           }}
         />
       )}
+
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => setShowLookupForm((prev) => !prev)}
+          className="text-sm font-bold text-blue-600 hover:text-blue-700 underline underline-offset-4 transition-colors"
+        >
+          Lấy địa chỉ từ số điện thoại mua hàng trước đây
+        </button>
+
+        {showLookupForm && (
+          <div className="border border-zinc-200 bg-zinc-50 p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-2">
+                  Số điện thoại đã từng mua hàng
+                </label>
+                <input
+                  type="tel"
+                  value={lookupPhone}
+                  onChange={(e) => {
+                    setLookupPhone(e.target.value);
+                    setLookupError("");
+                  }}
+                  className="w-full bg-white border border-zinc-200 px-4 py-3 text-sm font-medium focus:outline-none focus:border-black transition-colors"
+                  placeholder="Nhập số điện thoại"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleLookupAddress}
+                disabled={lookupLoading}
+                className="px-5 py-3 bg-black text-white text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+              >
+                {lookupLoading ? "Đang tìm..." : "Tìm địa chỉ"}
+              </button>
+            </div>
+
+            {lookupError && (
+              <p className="text-xs font-semibold text-red-600">{lookupError}</p>
+            )}
+
+            {lookupAddress && (
+              <div className="bg-white border border-zinc-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1 text-sm">
+                  <p className="font-black text-zinc-900">{lookupAddress.fullName}</p>
+                  <p className="text-xs text-zinc-500 font-semibold">{lookupAddress.phone}</p>
+                  <p className="text-xs text-zinc-600 leading-relaxed">
+                    {[lookupAddress.address, lookupAddress.ward, lookupAddress.district, lookupAddress.city]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => applyLookupAddress(lookupAddress)}
+                  className="px-5 py-3 border border-black text-black text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors shrink-0"
+                >
+                  Dùng địa chỉ này
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Divider */}
       {token && showFormFields && (
@@ -934,7 +1164,7 @@ function ShippingForm({
 
           <div className="space-y-2">
             <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-              Email nhận thông báo *
+              Email nhận thông báo (Không bắt buộc)
             </label>
             <input
               type="email"
@@ -1189,7 +1419,7 @@ function ShippingForm({
             />
           </div>
 
-          {showNewAddressForm && token && (
+          {(showNewAddressForm || usingLookupAddress) && token && (
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer group">
                 <input
@@ -1221,7 +1451,7 @@ function ShippingForm({
           type="submit"
           disabled={
             !showFormFields ||
-            (!showNewAddressForm && !selectedAddressId && !!token) ||
+            (!showNewAddressForm && !usingLookupAddress && !selectedAddressId && !!token) ||
             savingAddress
           }
           className="btn-primary px-12 py-4 disabled:opacity-40"
@@ -1499,7 +1729,7 @@ function OrderSummaryStep({
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
   const [redirecting, setRedirecting] = useState(false);
-  const { clearCart, items } = useCart();
+  const { clearCart, items, appliedCoupon } = useCart();
 
   const handlePlace = async () => {
     setPlacing(true);
@@ -1522,6 +1752,7 @@ function OrderSummaryStep({
         shippingWard: shippingInfo.wardName || "",
         orderNote: shippingInfo.note,
         paymentMethod,
+        couponCode: appliedCoupon?.code,
         shippingFee: shippingInfo.shippingFee,
       });
 

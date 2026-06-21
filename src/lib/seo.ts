@@ -371,6 +371,10 @@ export async function getRootMetadata(): Promise<Metadata> {
     title: siteName,
     description: desc,
     metadataBase: new URL(SITE_URL),
+    icons: {
+      icon: "/favicon.svg",
+      shortcut: "/favicon.svg",
+    },
     alternates: { canonical: "/" },
     openGraph: {
       title: siteName,
